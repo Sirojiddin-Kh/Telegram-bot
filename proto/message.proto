@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "application/proto";
+
+message MessageRequest {
+
+	string message = 1;
+	string priority = 2;
+}
+
+message MessageResponse {
+
+	string chat_id = 1;
+	string message = 2;
+
+}
+
+service MessageSender {
+
+	rpc Sender(MessageRequest) returns (MessageResponse) {}
+}
