@@ -1,16 +1,13 @@
 package main
 
 import (
-	pb "application/proto"
-	"bytes"
+	pb "application/proto"	
+	bot "application/bot"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net"
-	"net/http"
+	"net"	
 	"time"
-
 	_ "github.com/go-telegram-bot-api/telegram-bot-api"
 	"google.golang.org/grpc"
 )
@@ -19,57 +16,25 @@ type server struct {
 	pb.UnimplementedMessageSenderServer
 }
 
-type BotMessage struct {
-	ChatId string `json:"chat_id"`
-	Text   string `json:"text"`
-}
+var Messages []pb.MessageRequest
 
 func (s *server) Sender(ctx context.Context, req *pb.MessageRequest) (*pb.MessageResponse, error) {
 
 	fmt.Println("Sender function was invoked")
 
-	chat_id := "@taskbotforudevs"
+	var message pb.MessageRequest
+
+	message.Text = req.Text
+	message.Priority = req.Priority
+
+	Messages = append(Messages, message)
 
 	res := &pb.MessageResponse{
 
-		ChatId:  chat_id,
-		Message: req.Message,
+		Message: req.Text,
 	}
+	fmt.Println(message.Text)
 
-	var botMessage BotMessage
-	addres := "https://api.telegram.org/bot" + "2072163806:AAGw4j38aVS11P50aBBg8BIPoJiywmKZLHI"
-
-	botMessage.ChatId = "@taskbotforudevs"
-	botMessage.Text = req.Message
-
-	buf, err := json.Marshal(botMessage)
-
-	if err != nil {
-		log.Fatalf("Failed in Json: %v", err)
-	}
-
-	if req.Priority == "high" {
-
-		time.Sleep(5 * time.Second)
-		_, err = http.Post(addres+"/sendMessage", "application/json", bytes.NewBuffer(buf))
-
-	} else if req.Priority == "medium" {
-
-		time.Sleep(7 * time.Second)
-		_, err = http.Post(addres+"/sendMessage", "application/json", bytes.NewBuffer(buf))
-
-	} else if req.Priority == "low" {
-
-		time.Sleep(10 * time.Second)
-		_, err = http.Post(addres+"/sendMessage", "application/json", bytes.NewBuffer(buf))
-	} else {
-
-		fmt.Println("Undefined priority")
-	}
-
-	if err != nil {
-		log.Fatalf("Failed in Sending: %v", err)
-	}
 
 	return res, nil
 }
@@ -84,6 +49,7 @@ func main() {
 
 		log.Fatalf("Failed to Listen the port : %v", err)
 	}
+	go Sender()
 
 	s := grpc.NewServer()
 	pb.RegisterMessageSenderServer(s, &server{})
@@ -91,4 +57,65 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to Server : %v", err)
 	}
+}
+
+func Sender() {
+	var isSend bool
+    for {
+        isSend = false
+        for i, message := range Messages {
+            if message.Priority == "high" {
+               err := bot.MessageSenderBot(Messages[i].Text)
+                if err != nil {
+                    log.Fatalf("Problem with sending message to bot: %v",err) 
+                } else {
+                    isSend = true
+                    Messages = Remove(Messages, i)
+                    time.Sleep(time.Second * 10) 
+                    break
+                } 
+            }
+        }
+        
+        if isSend {
+            continue
+        }
+
+        for i, message := range Messages{
+            if message.Priority == "medium" {
+               err := bot.MessageSenderBot(Messages[i].Text)
+                if err != nil {
+                    log.Fatalf("Problem with sending message to bot: %v",err) 
+                } else {
+                    isSend = true
+                    Messages = Remove(Messages, i)
+                    time.Sleep(time.Second * 10) 
+                    break
+                } 
+            }
+        }
+        if isSend {
+            continue
+        }
+        for i, message := range Messages{
+        	if message.Priority == "low" {
+                err := bot.MessageSenderBot(Messages[i].Text)
+                if err != nil {
+                    log.Fatalf("Problem with sending message to bot: %v",err) 
+                } else {
+                    isSend = true
+                    Messages = Remove(Messages, i)
+                    time.Sleep(time.Second * 10) 
+                    break
+                } 
+            }
+        }
+
+
+    }
+}
+
+func Remove(s []pb.MessageRequest, i int) []pb.MessageRequest {
+    s[i] = s[len(s)-1]
+    return s[:len(s)-1]
 }

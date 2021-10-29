@@ -4,65 +4,59 @@ import (
 	"context"
 	"fmt"
 	"log"
-
-	pb "application/proto"
+	_ "application/client/docs"
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc"
+	pb "application/proto"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	_ "application/client/docs"
+	"google.golang.org/grpc"
 )
 
 var c pb.MessageSenderClient
 
-// @Summary send message 
-// @ID send-message-ctrl
+// @Summary MessageSender
+// @Description send message
+// @ID message_sender
+// @Accept json
 // @Produce json
-// @Param data body 
-// @Success 200 {object} send
-// @Failure 400 {object} message
+// @Param input body Message true "message_content"
+// @Success 200
+// @Failure 400
 // @Router /send [post]
 
-func SendMessageCtrl(ctx *gin.Context) {
+
+func SendMessageHandler(ctx *gin.Context) {
 
 	var newMessage pb.MessageRequest
 
 	if err := ctx.ShouldBindJSON(&newMessage); err != nil {
 
-		fmt.Println("Failed to accept message from cleint")
+		log.Println("Failed to accept message from cleint")
 	}
-
+	fmt.Println(newMessage)
 	res, err := c.Sender(context.Background(), &pb.MessageRequest{
-		Message:  newMessage.Message,
+		Text:  newMessage.Text,
 		Priority: newMessage.Priority,
-	},)
+	})
 
 	if err != nil {
 
 		log.Fatalf("Failed to call Sender RPC: %v", err)
 	}
-	fmt.Println(res)
+	log.Println(res)
 }
 
-// @title Go + Gin Telegram Bot Api
+
+// @title Message Sender Bot
 // @version 1.0
-// @description This is a sample server todo server. You can visit the GitHub repository at https://github.com/LordGhostX/swag-gin-demo
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name MIT
-// @license.url https://opensource.org/licenses/MIT
-
-// @host localhost:8080
+// @description Telegram Bot which sends messages to channels and groups
+// @host localhost:8000
 // @BasePath /
-// @query.collection.format multi
 
 func main() {
 
 	fmt.Println("Client Side is working")
-	
+
 	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 
 	if err != nil {
@@ -70,12 +64,12 @@ func main() {
 	}
 
 	c = pb.NewMessageSenderClient(conn)
-	fmt.Printf("Client is created", c) 
+	fmt.Printf("Client is created", c)
 
 	router := gin.Default()
 
-	router.POST("/send", SendMessageCtrl)
-    router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))	
-    router.Run("localhost:8080")
+	router.POST("/send", SendMessageHandler)
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	router.Run("localhost:8080")
 
 }
