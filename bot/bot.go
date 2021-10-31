@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"bytes"
-	"time"
 	"encoding/json"
 )
 
@@ -34,7 +33,6 @@ func MessageSenderBot(message string) (err error) {
 		log.Printf("Failed to Marshaling : %v", err)
 		return  
 	}
-	time.Sleep(time.Second * 5)
 	_, err = http.Post(addres + "/sendMessage", "application/json", bytes.NewBuffer(buf))
 
 	if err != nil {
