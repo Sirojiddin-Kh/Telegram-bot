@@ -75,51 +75,29 @@ func main() {
 }
 
 func Sender() {
-	var isSend bool
+
 	for {
-		isSend = false
-		for i := range HighPriorityMessages {
-			err := bot.MessageSenderBot(HighPriorityMessages[i].Text)
+		if len(HighPriorityMessages)>0 {
+			err := bot.MessageSenderBot(HighPriorityMessages[0].Text)
 			if err != nil {
 				log.Fatalf("Problem with sending message to bot: %v", err)
-			} else {
-				isSend = true
-				HighPriorityMessages = Remove(HighPriorityMessages, i)
-				time.Sleep(time.Second * 10)
-				break
 			}
-		}
-
-		if isSend {
-			continue
-		}
-
-		for i := range MediumPriorityMessages {
-			err := bot.MessageSenderBot(MediumPriorityMessages[i].Text)
+			HighPriorityMessages = Remove(HighPriorityMessages, 0)
+		} else if len(MediumPriorityMessages)>0 {
+			err := bot.MessageSenderBot(MediumPriorityMessages[0].Text)
 			if err != nil {
 				log.Fatalf("Problem with sending message to bot: %v", err)
-			} else {
-				isSend = true
-				MediumPriorityMessages = Remove(MediumPriorityMessages, i)
-				time.Sleep(time.Second * 10)
-				break
 			}
-
-		}
-		if isSend {
-			continue
-		}
-		for i := range LowPriorityMessages {
-			err := bot.MessageSenderBot(LowPriorityMessages[i].Text)
+			MediumPriorityMessages = Remove(MediumPriorityMessages, 0)
+		} else if len(LowPriorityMessages)>0 {
+			err := bot.MessageSenderBot(LowPriorityMessages[0].Text)
 			if err != nil {
 				log.Fatalf("Problem with sending message to bot: %v", err)
-			} else {
-				isSend = true
-				LowPriorityMessages = Remove(LowPriorityMessages, i)
-				time.Sleep(time.Second * 10)
-				break
 			}
+			LowPriorityMessages = Remove(LowPriorityMessages, 0)
 		}
+
+		time.Sleep(time.Second * 10)
 
 	}
 }

@@ -29,9 +29,9 @@ func SendMessageHandler(ctx *gin.Context) {
 
 	var newMessage pb.MessageRequest
 
-	if err := ctx.ShouldBindJSON(&newMessage); err != nil {
+	if err := ctx.BindJSON(&newMessage); err != nil {
 
-		log.Println("Failed to accept message from cleint")
+		log.Printf("Failed to accept message from cleint")
 	}
 	fmt.Println(newMessage)
 	res, err := c.Sender(context.Background(), &pb.MessageRequest{
